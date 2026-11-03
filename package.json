@@ -4,7 +4,8 @@
   "version": "1.3.0",
   "main": "main.js",
   "scripts": {
-    "build": "electron-packager . TeleLibre --platform=darwin --arch=universal --out=dist --overwrite --ignore=\"^/(dist|\\.impeccable|README\\.md|LICENSE)\" && ditto -c -k --keepParent dist/TeleLibre-darwin-universal/TeleLibre.app dist/TeleLibre-Mac.zip"
+    "build": "electron-packager . TeleLibre --platform=darwin --arch=universal --out=dist --overwrite --ignore=\"^/(dist|\\.impeccable|README\\.md|LICENSE)\" && ditto -c -k --keepParent dist/TeleLibre-darwin-universal/TeleLibre.app dist/TeleLibre-Mac.zip",
+    "build:win": "electron-packager . TeleLibre --platform=win32 --arch=x64 --out=dist --overwrite --ignore=\"^/(dist|\\.impeccable|README\\.md|LICENSE)\" && cd dist && rm -f TeleLibre-Windows.zip && zip -qr TeleLibre-Windows.zip TeleLibre-win32-x64"
   },
   "devDependencies": {
     "@electron/packager": "^20.3.0",

@@ -17,6 +17,7 @@ Télé Libre ne diffuse aucun contenu: les flux sont lus depuis leurs diffuseurs
 - **Application Mac, téléchargement manuel**: télécharger `TeleLibre-Mac.zip` dans l'onglet *Releases*, dézipper, glisser **TeleLibre** dans Applications. L'app n'est pas signée par Apple, donc macOS la bloque au premier lancement:
   1. cliquer sur **Terminé** (pas sur « Placer dans la corbeille »);
   2. *Réglages Système → Confidentialité et sécurité*, descendre jusqu'à « TeleLibre a été bloqué » et cliquer sur **Ouvrir quand même**.
+- **Application Windows (64 bits)**: télécharger `TeleLibre-Windows.zip` dans l'onglet *Releases*, clic droit → *Extraire tout*, puis double-cliquer sur `TeleLibre.exe`. Windows affichera « Windows a protégé votre ordinateur » (app non signée): cliquer sur **Informations complémentaires** puis **Exécuter quand même**. Version non testée sur un vrai PC Windows.
 - **Dans un navigateur**: ouvrir `index.html` (certains flux seront bloqués par le navigateur).
 
 ## Développer
