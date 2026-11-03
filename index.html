@@ -70,7 +70,7 @@ video{width:100%;height:100%;display:block;background:#000}
 </aside>
 <main>
   <div class="screen">
-    <video id="v" controls controlsList="nofullscreen" playsinline></video>
+    <video id="v" controls playsinline></video>
     <div id="idle">← Choisissez une chaîne</div>
     <div id="msg" hidden></div>
   </div>
@@ -91,14 +91,20 @@ const SRC = 'https://iptv-org.github.io/iptv/index.m3u';
 const STEP = 200; // chaînes ajoutées à chaque défilement
 const $ = s => document.querySelector(s);
 const v = $('#v'), list = $('#list');
-let all = [], view = [], shown = 0, cur = null, hls, tab = '', byUrl = new Map();
+let all = [], view = [], shown = 0, cur = null, started = false, hls, tab = '', byUrl = new Map();
 // shortcut: favoris/récents identifiés par l'URL du flux; si la liste change l'URL d'une chaîne, elle disparaît des favoris
 const read = k => { try { return JSON.parse(localStorage[k]) || []; } catch { return []; } };
 let favs = read('fav'), recents = read('rec');
+// chaînes en panne: URL -> date; masquées 7 jours (réaffichage possible dans l'onglet Info)
+const DEAD_MS = 7 * 864e5;
+let dead = (() => { try { return JSON.parse(localStorage.dead) || {}; } catch { return {}; } })();
+const isDead = c => Date.now() - (dead[c.url] || 0) < DEAD_MS;
+const saveDead = () => { try { localStorage.dead = JSON.stringify(dead); } catch {} };
 const save = () => { try { localStorage.fav = JSON.stringify(favs); localStorage.rec = JSON.stringify(recents); } catch {} };
 
 // À chaque mise à jour: ajouter une entrée EN TÊTE ici (la version affichée dans l'onglet Info est la première) et mettre à jour "version" dans package.json.
 const CHANGELOG = [
+  { v: '1.3', d: '03/11/2026', t: ['Bouton plein écran du lecteur réparé', 'Chaînes qui exigent un identifiant spécial (app Mac)', 'Chaînes en panne masquées 7 jours', 'Menu de sous-titres vide retiré'] },
   { v: '1.2', d: '03/11/2026', t: ['Liens GitHub dans l’onglet Info'] },
   { v: '1.1', d: '03/11/2026', t: ['Favoris et chaînes récentes', 'Catégories en français', 'Filtre par pays', 'Onglet Info'] },
   { v: '1.0', d: '03/11/2026', t: ['Première version: liste des chaînes et lecteur'] },
@@ -127,7 +133,11 @@ function parse(text) {
         name: l.slice(l.lastIndexOf(',') + 1).trim() || 'Sans nom', logo: a('tvg-logo'),
         group: a('group-title').split(';').filter(Boolean).map(g => CAT[g] || g).join(';') || 'Non classé',
         country: cc ? countryName(cc.toUpperCase()) : 'Pays inconnu',
+        ua: a('http-user-agent'), ref: a('http-referrer'),
       };
+    } else if (c && l.startsWith('#EXTVLCOPT:')) {
+      const [k, ...r] = l.slice(11).split('='); // identifiants que certains flux exigent
+      if (k === 'http-referrer') c.ref = r.join('='); else if (k === 'http-user-agent') c.ua = r.join('=');
     } else if (c && l.trim() && !l.startsWith('#')) {
       c.url = l.trim(); out.push(c); c = null;
     }
@@ -148,10 +158,13 @@ const status = t => list.replaceChildren(Object.assign(document.createElement('d
 
 function about() {
   list.scrollTop = 0;
+  const hidden = all.filter(isDead).length;
   list.innerHTML = `<div class="about"><h2>Télé Libre</h2>
     <dl><dt>Version</dt><dd>${CHANGELOG[0].v}</dd><dt>Développement</dt><dd><a href="https://github.com/${AUTHOR}" target="_blank" rel="noopener">${AUTHOR}</a></dd><dt>Licence</dt><dd>Logiciel libre et open source (MIT)</dd><dt>Code source</dt><dd><a href="https://github.com/${AUTHOR}/tele-libre" target="_blank" rel="noopener">github.com/${AUTHOR}/tele-libre</a></dd></dl>
     <p>Télé Libre ne diffuse aucun contenu: elle affiche la liste publique de chaînes du projet iptv-org et les lit depuis leurs diffuseurs d’origine. Beaucoup de flux sont limités à un pays ou hors ligne.</p>
+    <p>${hidden} chaîne(s) en panne masquée(s). <button id="undead">Tout réafficher</button></p>
     <h3>Historique</h3><ul>${CHANGELOG.map(r => `<li><b>${r.v}</b> (${r.d}) — ${r.t.join(', ')}</li>`).join('')}</ul></div>`;
+  $('#undead').onclick = () => { dead = {}; saveDead(); about(); };
 }
 
 function filter() {
@@ -159,7 +172,7 @@ function filter() {
   if (tab === 'info') return about();
   const q = $('#q').value.toLowerCase(), g = $('#grp').value, k = $('#cty').value;
   const src = tab === 'fav' ? favs : tab === 'rec' ? recents : null;
-  view = (src ? src.map(u => byUrl.get(u)).filter(Boolean) : all).filter(c => (!g || c.group.split(';').includes(g)) && (!k || c.country === k) && c.name.toLowerCase().includes(q));
+  view = (src ? src.map(u => byUrl.get(u)).filter(Boolean) : all).filter(c => (tab === 'fav' || !isDead(c)) && (!g || c.group.split(';').includes(g)) && (!k || c.country === k) && c.name.toLowerCase().includes(q));
   $('#count span').textContent = view.length + ' chaînes';
   list.replaceChildren(); list.scrollTop = 0; shown = 0; more(); paint();
   if (!view.length) status(tab === 'fav' ? 'Aucun favori. Cliquez sur ☆ à côté d’une chaîne.' : tab === 'rec' ? 'Aucune chaîne regardée pour l’instant.' : 'Aucune chaîne.');
@@ -198,7 +211,8 @@ function row(c) {
 }
 
 function play(c) {
-  cur = c; hls?.destroy(); hls = null;
+  cur = c; started = false; hls?.destroy(); hls = null;
+  window.tele?.setHeaders(c.url, c.ua || '', c.ref || ''); // app Mac uniquement
   recents = [c.url, ...recents.filter(u => u !== c.url)].slice(0, 20); save();
   $('#title').textContent = c.name; $('#sub').textContent = sub(c);
   $('#live').hidden = false; $('#idle').hidden = true; $('#msg').hidden = true;
@@ -206,7 +220,7 @@ function play(c) {
   const r = [...list.children].find(e => e._c === c); r?.classList.add('on'); r?.scrollIntoView({ block: 'nearest' }); paint();
   if (location.protocol === 'https:' && c.url.startsWith('http:')) return fail('Flux en http bloqué par le navigateur sur une page https.');
   if (window.Hls && Hls.isSupported()) {
-    hls = new Hls(); hls.loadSource(c.url); hls.attachMedia(v);
+    hls = new Hls({ enableCEA708Captions: false }); hls.loadSource(c.url); hls.attachMedia(v);
     hls.on(Hls.Events.ERROR, (_, d) => d.fatal && fail());
   } else v.src = c.url; // Safari lit le HLS nativement
   v.play().catch(() => {});
@@ -215,7 +229,13 @@ function play(c) {
 function fail(m) {
   const e = $('#msg'); e.hidden = false;
   e.textContent = m || 'Flux indisponible ou bloqué. Beaucoup de chaînes gratuites sont hors ligne ou limitées à un pays — essayez-en une autre.';
+  // hors connexion, tout échoue: on ne masque rien dans ce cas
+  if (!m && cur && !started && navigator.onLine) {
+    dead[cur.url] = Date.now(); saveDead();
+    e.textContent += ' Cette chaîne sera masquée de la liste pendant 7 jours (réaffichage dans l’onglet Info).';
+  }
 }
+v.addEventListener('playing', () => started = true);
 v.addEventListener('error', () => cur && fail());
 
 function step(d) {
