@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Télé Libre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="hls.min.js"></script>
+<style>
+:root{--bg:#0d0b09;--panel:#161310;--line:#2b251d;--ink:#f2eadd;--mute:#8e8472;--hot:#ff5a1f;--glow:#ffb020}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:radial-gradient(900px 500px at 75% -10%,#3a1d0d55,transparent),var(--bg);color:var(--ink);font:15px/1.4 "Bricolage Grotesque",system-ui,sans-serif;display:grid;grid-template-columns:390px 1fr;overflow:hidden}
+aside{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+header{padding:20px 18px 12px}
+h1{font-weight:800;font-size:30px;letter-spacing:-.03em;line-height:1}
+h1 b{color:var(--hot)}
+.tools{display:grid;gap:8px;padding:0 18px 12px}
+input,select,button{font:inherit;color:var(--ink);background:#0d0b09;border:1px solid var(--line);border-radius:6px;padding:9px 11px}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--glow);outline-offset:1px}
+#count{font:12px "IBM Plex Mono",monospace;color:var(--mute);display:flex;justify-content:space-between;align-items:center}
+#count label{color:var(--glow);cursor:pointer;text-decoration:underline}
+#list{flex:1;overflow-y:auto;border-top:1px solid var(--line)}
+.ch{display:flex;border-bottom:1px solid var(--line)}
+.pick{flex:1;min-width:0;display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center;text-align:left;border:0;border-radius:0;background:none;padding:9px 6px 9px 18px;cursor:pointer}
+.star{border:0;border-radius:0;background:none;color:var(--glow);font-size:18px;padding:0 16px;cursor:pointer}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.two select{min-width:0}
+.about{padding:20px 18px;line-height:1.55}.about h2{font-size:22px;letter-spacing:-.02em}.about h3{margin-top:18px;font-size:13px;color:var(--mute);font-family:"IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.08em}
+.about dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:12px}.about dt{color:var(--mute)}.about dd{margin:0}.about p{margin-top:12px;color:var(--mute)}.about ul{margin:6px 0 0 18px}.about li{margin-top:4px}
+.tabs{display:flex;gap:6px}.tabs button{flex:1;cursor:pointer;padding:7px}.tabs .on{border-color:var(--hot);color:var(--glow)}
+.ch:hover{background:#221c15}
+.ch.on{background:linear-gradient(90deg,#ff5a1f33,transparent);box-shadow:inset 3px 0 var(--hot)}
+.ch i{width:44px;height:30px;background:#fff1;border-radius:4px;display:grid;place-items:center;overflow:hidden}
+.ch img{max-width:100%;max-height:100%;object-fit:contain}
+.ch span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch small{display:block;color:var(--mute);font:12px "IBM Plex Mono",monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status{padding:24px 18px;color:var(--mute);font:13px "IBM Plex Mono",monospace}
+main{display:flex;flex-direction:column;padding:26px 30px;gap:16px;min-width:0;min-height:0;overflow-y:auto}
+.screen{position:relative;aspect-ratio:16/9;max-height:68vh;width:100%;background:#000;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px var(--line),0 24px 60px -20px #000c}
+video{width:100%;height:100%;display:block;background:#000}
+#msg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:30px;background:#000d;color:var(--glow);font:14px "IBM Plex Mono",monospace}
+#idle{position:absolute;inset:0;display:grid;place-items:center;color:var(--mute);font:14px "IBM Plex Mono",monospace;pointer-events:none}
+.info{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+#title{font-weight:800;font-size:28px;letter-spacing:-.02em}
+#sub{color:var(--mute);font:13px "IBM Plex Mono",monospace}
+.live{font:12px "IBM Plex Mono",monospace;color:var(--hot);letter-spacing:.12em}
+.live::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--hot);margin-right:6px;animation:b 1.2s infinite}
+@keyframes b{50%{opacity:.2}}
+.bar{display:flex;gap:8px;flex-wrap:wrap}
+.bar button{cursor:pointer;font:500 13px "IBM Plex Mono",monospace}
+.bar button:hover{border-color:var(--hot);color:var(--glow)}
+.keys{color:var(--mute);font:12px "IBM Plex Mono",monospace}
+[hidden]{display:none!important}
+@media(max-width:800px){body{grid-template-columns:1fr;grid-template-rows:auto 1fr;overflow:auto;height:auto}aside{max-height:55vh}main{padding:16px}}
+</style>
+</head>
+<body>
+<aside>
+  <header><h1>Télé<b>Libre</b></h1></header>
+  <div class="tools">
+    <div class="tabs"><button class="on" data-t="">Toutes</button><button data-t="fav">★ Favoris</button><button data-t="rec">Récents</button><button data-t="info">ℹ Info</button></div>
+    <div id="filters" class="tools" style="padding:0">
+      <input id="q" type="search" placeholder="Rechercher une chaîne…" autocomplete="off">
+      <div class="two"><select id="grp"><option value="">Toutes catégories</option></select><select id="cty"><option value="">Tous pays</option></select></div>
+      <div id="count"><span></span><label>Ouvrir un .m3u<input id="file" type="file" accept=".m3u,.m3u8,text/*" hidden></label></div>
+    </div>
+  </div>
+  <div id="list"><div class="status">Chargement de la liste…</div></div>
+</aside>
+<main>
+  <div class="screen">
+    <video id="v" controls controlsList="nofullscreen" playsinline></video>
+    <div id="idle">← Choisissez une chaîne</div>
+    <div id="msg" hidden></div>
+  </div>
+  <div class="info"><span id="title"></span><span id="sub"></span><span class="live" id="live" hidden>EN DIRECT</span></div>
+  <div class="bar">
+    <button id="prev" title="Chaîne précédente (↑)" aria-label="Chaîne précédente">⏮</button>
+    <button id="b10" aria-label="Reculer de 10 secondes">−10 s</button>
+    <button id="f10" aria-label="Avancer de 10 secondes">+10 s</button>
+    <button id="next" title="Chaîne suivante (↓)" aria-label="Chaîne suivante">⏭</button>
+    <button id="favbtn">☆ Favori</button>
+    <button id="pip">Fenêtre flottante</button>
+    <button id="fs">Plein écran (F)</button>
+  </div>
+  <div class="keys">Espace lecture · ←/→ ±10 s · ↑/↓ chaîne · F plein écran · M muet · double-clic = plein écran</div>
+</main>
+<script>
+const SRC = 'https://iptv-org.github.io/iptv/index.m3u';
+const STEP = 200; // chaînes ajoutées à chaque défilement
+const $ = s => document.querySelector(s);
+const v = $('#v'), list = $('#list');
+let all = [], view = [], shown = 0, cur = null, hls, tab = '', byUrl = new Map();
+// shortcut: favoris/récents identifiés par l'URL du flux; si la liste change l'URL d'une chaîne, elle disparaît des favoris
+const read = k => { try { return JSON.parse(localStorage[k]) || []; } catch { return []; } };
+let favs = read('fav'), recents = read('rec');
+const save = () => { try { localStorage.fav = JSON.stringify(favs); localStorage.rec = JSON.stringify(recents); } catch {} };
+
+// À chaque mise à jour: ajouter une entrée EN TÊTE ici (la version affichée dans l'onglet Info est la première) et mettre à jour "version" dans package.json.
+const CHANGELOG = [
+  { v: '1.1', d: '03/11/2026', t: ['Favoris et chaînes récentes', 'Catégories en français', 'Filtre par pays', 'Onglet Info'] },
+  { v: '1.0', d: '03/11/2026', t: ['Première version: liste des chaînes et lecteur'] },
+];
+const AUTHOR = 'gwenchnal-dev';
+const CAT = {
+  Animation: 'Animation', Auto: 'Auto', Business: 'Économie', Classic: 'Classiques', Comedy: 'Humour', Cooking: 'Cuisine',
+  Culture: 'Culture', Documentary: 'Documentaires', Education: 'Éducation', Entertainment: 'Divertissement', Family: 'Famille',
+  General: 'Généralistes', Interactive: 'Interactif', Kids: 'Jeunesse', Legislative: 'Parlement', Lifestyle: 'Art de vivre',
+  Movies: 'Films', Music: 'Musique', News: 'Info', Outdoor: 'Nature et plein air', Public: 'Service public', Relax: 'Détente',
+  Religious: 'Religion', Science: 'Sciences', Series: 'Séries', Shop: 'Téléachat', Sports: 'Sport', Travel: 'Voyage',
+  Undefined: 'Non classé', Weather: 'Météo', XXX: 'Adulte',
+};
+const regions = new Intl.DisplayNames(['fr'], { type: 'region' });
+// iptv-org utilise "uk" pour le Royaume-Uni (le code ISO est GB)
+const countryName = cc => { try { return regions.of(cc === 'UK' ? 'GB' : cc); } catch { return cc; } };
+const sub = c => c.country + ' · ' + c.group.replace(/;/g, ' · ');
+
+function parse(text) {
+  const out = []; let c = null;
+  for (const l of text.split(/\r?\n/)) {
+    if (l.startsWith('#EXTINF')) {
+      const a = k => (l.match(new RegExp(k + '="([^"]*)"')) || [])[1] || '';
+      const cc = (a('tvg-id').match(/\.([a-z]{2})(?:@|$)/i) || [])[1]; // le pays est le suffixe de l'identifiant (ex. TF1.fr@SD)
+      c = {
+        name: l.slice(l.lastIndexOf(',') + 1).trim() || 'Sans nom', logo: a('tvg-logo'),
+        group: a('group-title').split(';').filter(Boolean).map(g => CAT[g] || g).join(';') || 'Non classé',
+        country: cc ? countryName(cc.toUpperCase()) : 'Pays inconnu',
+      };
+    } else if (c && l.trim() && !l.startsWith('#')) {
+      c.url = l.trim(); out.push(c); c = null;
+    }
+  }
+  return out;
+}
+
+function init(text) {
+  all = parse(text); byUrl = new Map(all.map(c => [c.url, c]));
+  if (!all.length) return status('Aucune chaîne trouvée dans ce fichier.');
+  const fill = (id, vals) => { const s = $(id); s.length = 1; [...new Set(vals)].sort((a, b) => a.localeCompare(b, 'fr')).forEach(x => s.add(new Option(x, x))); };
+  fill('#grp', all.flatMap(c => c.group.split(';')));
+  fill('#cty', all.map(c => c.country));
+  filter();
+}
+
+const status = t => list.replaceChildren(Object.assign(document.createElement('div'), { className: 'status', textContent: t }));
+
+function about() {
+  list.scrollTop = 0;
+  list.innerHTML = `<div class="about"><h2>Télé Libre</h2>
+    <dl><dt>Version</dt><dd>${CHANGELOG[0].v}</dd><dt>Développement</dt><dd>${AUTHOR}</dd><dt>Licence</dt><dd>Logiciel libre et open source (MIT)</dd></dl>
+    <p>Télé Libre ne diffuse aucun contenu: elle affiche la liste publique de chaînes du projet iptv-org et les lit depuis leurs diffuseurs d’origine. Beaucoup de flux sont limités à un pays ou hors ligne.</p>
+    <h3>Historique</h3><ul>${CHANGELOG.map(r => `<li><b>${r.v}</b> (${r.d}) — ${r.t.join(', ')}</li>`).join('')}</ul></div>`;
+}
+
+function filter() {
+  $('#filters').hidden = tab === 'info';
+  if (tab === 'info') return about();
+  const q = $('#q').value.toLowerCase(), g = $('#grp').value, k = $('#cty').value;
+  const src = tab === 'fav' ? favs : tab === 'rec' ? recents : null;
+  view = (src ? src.map(u => byUrl.get(u)).filter(Boolean) : all).filter(c => (!g || c.group.split(';').includes(g)) && (!k || c.country === k) && c.name.toLowerCase().includes(q));
+  $('#count span').textContent = view.length + ' chaînes';
+  list.replaceChildren(); list.scrollTop = 0; shown = 0; more(); paint();
+  if (!view.length) status(tab === 'fav' ? 'Aucun favori. Cliquez sur ☆ à côté d’une chaîne.' : tab === 'rec' ? 'Aucune chaîne regardée pour l’instant.' : 'Aucune chaîne.');
+}
+
+function toggleFav(c) {
+  favs = favs.includes(c.url) ? favs.filter(u => u !== c.url) : [c.url, ...favs];
+  save(); tab === 'fav' ? filter() : paint();
+}
+
+function paint() {
+  list.querySelectorAll('.ch').forEach(r => r.querySelector('.star').textContent = favs.includes(r._c.url) ? '★' : '☆');
+  $('#favbtn').textContent = (cur && favs.includes(cur.url) ? '★' : '☆') + ' Favori';
+}
+
+function more() {
+  const frag = document.createDocumentFragment();
+  for (const c of view.slice(shown, shown + STEP)) frag.append(row(c));
+  shown += STEP; list.append(frag);
+}
+
+function row(c) {
+  const d = document.createElement('div'); d.className = 'ch' + (c === cur ? ' on' : ''); d._c = c;
+  const b = document.createElement('button'); b.className = 'pick';
+  const i = document.createElement('i');
+  if (c.logo) { const im = new Image(); im.loading = 'lazy'; im.referrerPolicy = 'no-referrer'; im.src = c.logo; im.onerror = () => im.remove(); i.append(im); }
+  const t = document.createElement('div');
+  const n = document.createElement('span'); n.textContent = c.name;
+  const g = document.createElement('small'); g.textContent = sub(c);
+  t.append(n, g); b.append(i, t);
+  b.onclick = () => play(c);
+  const s = document.createElement('button'); s.className = 'star'; s.title = s.ariaLabel = 'Favori';
+  s.textContent = favs.includes(c.url) ? '★' : '☆'; s.onclick = () => toggleFav(c);
+  d.append(b, s);
+  return d;
+}
+
+function play(c) {
+  cur = c; hls?.destroy(); hls = null;
+  recents = [c.url, ...recents.filter(u => u !== c.url)].slice(0, 20); save();
+  $('#title').textContent = c.name; $('#sub').textContent = sub(c);
+  $('#live').hidden = false; $('#idle').hidden = true; $('#msg').hidden = true;
+  list.querySelectorAll('.on').forEach(e => e.classList.remove('on'));
+  const r = [...list.children].find(e => e._c === c); r?.classList.add('on'); r?.scrollIntoView({ block: 'nearest' }); paint();
+  if (location.protocol === 'https:' && c.url.startsWith('http:')) return fail('Flux en http bloqué par le navigateur sur une page https.');
+  if (window.Hls && Hls.isSupported()) {
+    hls = new Hls(); hls.loadSource(c.url); hls.attachMedia(v);
+    hls.on(Hls.Events.ERROR, (_, d) => d.fatal && fail());
+  } else v.src = c.url; // Safari lit le HLS nativement
+  v.play().catch(() => {});
+}
+
+function fail(m) {
+  const e = $('#msg'); e.hidden = false;
+  e.textContent = m || 'Flux indisponible ou bloqué. Beaucoup de chaînes gratuites sont hors ligne ou limitées à un pays — essayez-en une autre.';
+}
+v.addEventListener('error', () => cur && fail());
+
+function step(d) {
+  let i = view.indexOf(cur) + d;
+  if (cur === null) i = 0;
+  if (i < 0 || i >= view.length) return;
+  while (shown <= i) more();
+  play(view[i]);
+}
+const seek = s => { v.currentTime += s; };
+const full = () => (v.requestFullscreen || v.webkitEnterFullscreen).call(v);
+
+$('#favbtn').onclick = () => cur && toggleFav(cur);
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  tab = b.dataset.t; document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); filter();
+});
+$('#q').oninput = filter; $('#grp').onchange = $('#cty').onchange = filter;
+list.onscroll = () => { if (shown < view.length && list.scrollTop + list.clientHeight > list.scrollHeight - 400) more(); };
+$('#prev').onclick = () => step(-1); $('#next').onclick = () => step(1);
+$('#b10').onclick = () => seek(-10); $('#f10').onclick = () => seek(10);
+$('#fs').onclick = full; v.ondblclick = full;
+$('#pip').onclick = () => document.pictureInPictureElement ? document.exitPictureInPicture() : v.requestPictureInPicture?.().catch(() => {});
+$('#file').onchange = async e => { const f = e.target.files[0]; if (f) init(await f.text()); };
+addEventListener('keydown', e => {
+  if (/INPUT|SELECT/.test(e.target.tagName) || e.metaKey || e.ctrlKey) return;
+  const k = { ArrowLeft: () => seek(-10), ArrowRight: () => seek(10), ArrowUp: () => step(-1), ArrowDown: () => step(1),
+    f: full, F: full, m: () => v.muted = !v.muted, M: () => v.muted = !v.muted, ' ': () => v.paused ? v.play() : v.pause() }[e.key];
+  if (k) { e.preventDefault(); k(); }
+});
+
+fetch(SRC).then(r => r.ok ? r.text() : Promise.reject()).then(init)
+  .catch(() => status('Liste inaccessible. Vérifiez la connexion, ou utilisez « Ouvrir un .m3u » (téléchargez d’abord le fichier).'));
+</script>
+</body>
+</html>
