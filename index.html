@@ -27,7 +27,7 @@ input:focus,select:focus,button:focus-visible{outline:2px solid var(--glow);outl
 .star{border:0;border-radius:0;background:none;color:var(--glow);font-size:18px;padding:0 16px;cursor:pointer}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.two select{min-width:0}
 .about{padding:20px 18px;line-height:1.55}.about h2{font-size:22px;letter-spacing:-.02em}.about h3{margin-top:18px;font-size:13px;color:var(--mute);font-family:"IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.08em}
-.about dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:12px}.about dt{color:var(--mute)}.about dd{margin:0}.about p{margin-top:12px;color:var(--mute)}.about ul{margin:6px 0 0 18px}.about li{margin-top:4px}
+.about dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:12px}.about dt{color:var(--mute)}.about dd{margin:0}.about a{color:var(--glow)}.about p{margin-top:12px;color:var(--mute)}.about ul{margin:6px 0 0 18px}.about li{margin-top:4px}
 .tabs{display:flex;gap:6px}.tabs button{flex:1;cursor:pointer;padding:7px}.tabs .on{border-color:var(--hot);color:var(--glow)}
 .ch:hover{background:#221c15}
 .ch.on{background:linear-gradient(90deg,#ff5a1f33,transparent);box-shadow:inset 3px 0 var(--hot)}
@@ -99,6 +99,7 @@ const save = () => { try { localStorage.fav = JSON.stringify(favs); localStorage
 
 // À chaque mise à jour: ajouter une entrée EN TÊTE ici (la version affichée dans l'onglet Info est la première) et mettre à jour "version" dans package.json.
 const CHANGELOG = [
+  { v: '1.2', d: '03/11/2026', t: ['Liens GitHub dans l’onglet Info'] },
   { v: '1.1', d: '03/11/2026', t: ['Favoris et chaînes récentes', 'Catégories en français', 'Filtre par pays', 'Onglet Info'] },
   { v: '1.0', d: '03/11/2026', t: ['Première version: liste des chaînes et lecteur'] },
 ];
@@ -148,7 +149,7 @@ const status = t => list.replaceChildren(Object.assign(document.createElement('d
 function about() {
   list.scrollTop = 0;
   list.innerHTML = `<div class="about"><h2>Télé Libre</h2>
-    <dl><dt>Version</dt><dd>${CHANGELOG[0].v}</dd><dt>Développement</dt><dd>${AUTHOR}</dd><dt>Licence</dt><dd>Logiciel libre et open source (MIT)</dd></dl>
+    <dl><dt>Version</dt><dd>${CHANGELOG[0].v}</dd><dt>Développement</dt><dd><a href="https://github.com/${AUTHOR}" target="_blank" rel="noopener">${AUTHOR}</a></dd><dt>Licence</dt><dd>Logiciel libre et open source (MIT)</dd><dt>Code source</dt><dd><a href="https://github.com/${AUTHOR}/tele-libre" target="_blank" rel="noopener">github.com/${AUTHOR}/tele-libre</a></dd></dl>
     <p>Télé Libre ne diffuse aucun contenu: elle affiche la liste publique de chaînes du projet iptv-org et les lit depuis leurs diffuseurs d’origine. Beaucoup de flux sont limités à un pays ou hors ligne.</p>
     <h3>Historique</h3><ul>${CHANGELOG.map(r => `<li><b>${r.v}</b> (${r.d}) — ${r.t.join(', ')}</li>`).join('')}</ul></div>`;
 }
