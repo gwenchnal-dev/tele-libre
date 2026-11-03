@@ -7,10 +7,16 @@ Télé Libre ne diffuse aucun contenu: les flux sont lus depuis leurs diffuseurs
 
 ## Utiliser
 
-- **Application Mac**: télécharger `TeleLibre-Mac.zip` dans l'onglet *Releases*, dézipper, glisser **TeleLibre** dans Applications. L'app n'est pas signée par Apple, donc macOS la bloque au premier lancement:
+- **Application Mac, installation en une ligne (recommandé)**: ouvrir l'app *Terminal*, coller cette ligne, appuyer sur Entrée:
+
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/gwenchnal-dev/tele-libre/main/install.sh | bash
+  ```
+
+  L'app s'installe dans Applications et se lance, sans avertissement de macOS.
+- **Application Mac, téléchargement manuel**: télécharger `TeleLibre-Mac.zip` dans l'onglet *Releases*, dézipper, glisser **TeleLibre** dans Applications. L'app n'est pas signée par Apple, donc macOS la bloque au premier lancement:
   1. cliquer sur **Terminé** (pas sur « Placer dans la corbeille »);
-  2. ouvrir *Réglages Système → Confidentialité et sécurité*, descendre jusqu'à « TeleLibre a été bloqué » et cliquer sur **Ouvrir quand même** (mot de passe du Mac demandé);
-  3. ou, dans le Terminal: `xattr -dr com.apple.quarantine /Applications/TeleLibre.app`.
+  2. *Réglages Système → Confidentialité et sécurité*, descendre jusqu'à « TeleLibre a été bloqué » et cliquer sur **Ouvrir quand même**.
 - **Dans un navigateur**: ouvrir `index.html` (certains flux seront bloqués par le navigateur).
 
 ## Développer
